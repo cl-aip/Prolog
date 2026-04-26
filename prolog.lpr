@@ -1,4 +1,4 @@
-;; -*- lisp-version: "10.1 [64-bit Windows *SMP*] (Feb 25, 2021 14:41)"; -*-
+;; -*- lisp-version: "10.1 [64-bit Windows *SMP*] (Jan 18, 2026 12:11)"; -*-
 
 (in-package :cg-user)
 
@@ -6,11 +6,13 @@
   :modules (list (make-instance 'module :name "auxfns.lisp")
                  (make-instance 'module :name "patmatch.lisp")
                  (make-instance 'module :name "unify.lisp")
-                 (make-instance 'module :name "prolog.lisp"))
+                 (make-instance 'module :name "prologi.lisp")
+                 (make-instance 'module :name "prologc.lisp")
+                 (make-instance 'module :name "prologcp.lisp"))
   :projects nil
   :libraries nil
   :editable-files nil
-  :distributed-files nil
+  :distributed-files (list "prologcdemo.txt" "prologc.asd")
   :internally-loaded-files nil
   :project-package-name :common-graphics-user
   :main-form nil

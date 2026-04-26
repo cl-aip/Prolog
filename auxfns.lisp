@@ -6,12 +6,22 @@
 ;;; Load this file before running any other programs.
 
 (provide "auxfns")
+(setq *ON-PACKAGE-VARIANCE* nil)
+;;; ==================================================================================
+(defpackage :prolog
+  (:use :common-lisp)
+  (:export :lookup :variable-p :predicate
+           :maybe-add :mappend :partition-if :starts-with :last1 :first-or-nil :symbl
+           :first-or-self :mklist :reuse-cons)
+  )
 
+(in-package :prolog)
+;;; ==================================================================================
 ;;;; Implementation-Specific Details
 
 (eval-when (eval compile load)
   ;; Make it ok to place a function definition on a built-in LISP symbol.
-  #+(or Allegro EXCL)
+  #+(or allegro excl)
   (dolist (pkg '(excl common-lisp common-lisp-user))
     (setf (excl:package-definition-lock (find-package pkg)) nil))
 
@@ -159,7 +169,7 @@
   "Find all those elements of sequence that match item,
   according to the keywords.  Doesn't alter sequence."
   (if test-not
-      (apply #'remove item sequence 
+      (apply #'remove item sequence
              :test-not (complement test-not) keyword-args)
       (apply #'remove item sequence
              :test (complement test) keyword-args)))
@@ -208,6 +218,10 @@
 ;;; Therefore, it would be best to rename the function SYMBOL to something 
 ;;; else.  This has not been done (for compatibility with the book).  
 
+(defun symbl (&rest args) ; seiji 
+  "Concatenate symbols or strings to form an interned symbol"
+  (intern (format nil "~{~a~}" args)))
+
 (defun new-symbol (&rest args)
   "Concatenate symbols or strings to form an uninterned symbol"
   (make-symbol (format nil "~{~a~}" args)))
@@ -223,7 +237,7 @@
   Like mapcon, but uses append instead of nconc."
   (apply #'append (mapcar fn list)))
 
-(defun mklist (x) 
+(defun mklist (x)
   "If x is a list return it, otherwise return the list of x"
   (if (listp x) x (list x)))
 
@@ -231,7 +245,7 @@
   "Get rid of imbedded lists (to one level only)."
   (mappend #'mklist exp))
 
-(defun random-elt (seq) 
+(defun random-elt (seq)
   "Pick a random element out of a sequence."
   (elt seq (random (length seq))))
 
@@ -277,17 +291,18 @@
 ;;;; PATTERN MATCHING FACILITY
 
 (defconstant fail nil)
-(defconstant no-bindings '((t . t)))
-
-;;;(defun pat-match (pattern input &optional (bindings no-bindings))
-;;;  "Match pattern against input in the context of the bindings"
-;;;  (cond ((eq bindings fail) fail)
-;;;        ((variable-p pattern) (match-variable pattern input bindings))
-;;;        ((eql pattern input) bindings)
-;;;        ((and (consp pattern) (consp input))
-;;;         (pat-match (rest pattern) (rest input)
-;;;                    (pat-match (first pattern) (first input) bindings)))
-;;;        (t fail)))
+#-:SBCL(defconstant no-bindings '((t . t)))
+#+:SBCL(defparameter no-bindings '((t . t)))
+#+:never
+(defun pat-match (pattern input &optional (bindings no-bindings))
+  "Match pattern against input in the context of the bindings"
+  (cond ((eq bindings fail) fail)
+        ((variable-p pattern) (match-variable pattern input bindings))
+        ((eql pattern input) bindings)
+        ((and (consp pattern) (consp input))
+         (pat-match (rest pattern) (rest input)
+                    (pat-match (first pattern) (first input) bindings)))
+        (t fail)))
 
 (defun match-variable (var input bindings)
   "Does VAR match input?  Uses (or updates) and returns bindings."
@@ -322,10 +337,10 @@
         (if (eq bindings no-bindings)
             nil
             bindings)))
-
-;;;(defun variable-p (x)
-;;;  "Is x a variable (a symbol beginning with `?')?"
-;;;  (and (symbolp x) (equal (elt (symbol-name x) 0) #\?)))
+#+:never
+(defun variable-p (x)
+  "Is x a variable (a symbol beginning with `?')?"
+  (and (symbolp x) (equal (elt (symbol-name x) 0) #\?)))
 
 ;;; ==============================
 
@@ -407,7 +422,7 @@
 
 ;;;; Other:
 
-(defun sort* (seq pred &key key) 
+(defun sort* (seq pred &key key)
   "Sort without altering the sequence"
   (sort (copy-seq seq) pred :key key))
 
@@ -419,7 +434,7 @@
 
 ;;; ==============================
 
-(defun length=1 (x) 
+(defun length=1 (x)
   "Is x a list of length 1?"
   (and (consp x) (null (cdr x))))
 
@@ -452,17 +467,17 @@
 
 ;;; ==============================
 
-;;;(defmacro define-enumerated-type (type &rest elements)
-;;;  "Represent an enumerated type with integers 0-n."
-;;;  `(progn
-;;;     (deftype ,type () '(integer 0 ,(- (length elements) 1)))
-;;;     (defun ,(symbol type '->symbol) (,type)
-;;;       (elt ',elements ,type))
-;;;     (defun ,(symbol 'symbol-> type) (symbol)
-;;;       (position symbol ',elements))
-;;;     ,@(loop for element in elements
-;;;             for i from 0
-;;;             collect `(defconstant ,element ,i))))
+(defmacro define-enumerated-type (type &rest elements)
+  "Represent an enumerated type with integers 0-n."
+  `(progn
+     (deftype ,type () '(integer 0 ,(- (length elements) 1)))
+     (defun ,(symbl type '->symbol) (,type)
+       (elt ',elements ,type))
+     (defun ,(symbl 'symbol-> type) (symbol)
+       (position symbol ',elements))
+     ,@(loop for element in elements
+             for i from 0
+             collect `(defconstant ,element ,i))))
 
 ;;; ==============================
 
@@ -512,7 +527,7 @@
        (do-result (i)
          (if (and (vectorp result-sequence)
                   (array-has-fill-pointer-p result-sequence))
-             (setf (fill-pointer result-sequence) 
+             (setf (fill-pointer result-sequence)
                    (max i (fill-pointer result-sequence))))))
       (declare (inline do-one-call))
       ;; Decide if the result is a list or vector,

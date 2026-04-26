@@ -13,7 +13,14 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require "auxfns")
   )
+;;; ==================================================================================
+(defpackage :prolog
+  (:use :common-lisp)
+  (:export )
+  )
 
+(in-package :prolog)
+;;; ==================================================================================
 (defun variable-p (x)
   "Is x a variable (a symbol beginning with `?')?"
   (and (symbolp x) (equal (elt (symbol-name x) 0) #\?)))

@@ -9,7 +9,14 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require "patmatch")
   )
+;;; ==================================================================================
+(defpackage :prolog
+  (:use :common-lisp)
+  (:export :subst-bindings :unify)
+  )
 
+(in-package :prolog)
+;;; ==================================================================================
 (defparameter *occurs-check* t "Should we do the occurs check?")
 
 (defun unify (x y &optional (bindings no-bindings))
@@ -19,7 +26,7 @@
         ((variable-p x) (unify-variable x y bindings))
         ((variable-p y) (unify-variable y x bindings))
         ((and (consp x) (consp y))
-         (unify (rest x) (rest y) 
+         (unify (rest x) (rest y)
                 (unify (first x) (first y) bindings)))
         (t fail)))
 
